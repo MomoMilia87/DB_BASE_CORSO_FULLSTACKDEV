@@ -44,7 +44,10 @@
     <div class="col-md-6 mb-4 mt-4">
         <div class="card p-3">
             <h5 class="text-center">Prenotazioni per mese</h5>
+
+            <!--Chart a linee-->
             <canvas id="lineaPrenotazioni"></canvas>
+            
             <button class="btn btn-sm btn-outline-secondary mt-3">
                 Scarica PNG
             </button>
@@ -56,8 +59,11 @@
     <div class="col-md-6 mb-4 mt-4">
         <div class="card p-3">
             <h5 class="text-center">Entrate Mensili</h5>
+
+            <!--Chart a barre-->
             <canvas id="barEntrate"></canvas>
-             <button class="btn btn-sm btn-outline-secondary mt-3">
+            
+            <button class="btn btn-sm btn-outline-secondary mt-3">
                 Scarica PNG
             </button>
         </div>

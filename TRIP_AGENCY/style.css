@@ -60,3 +60,11 @@ footer{
     margin-top: auto;
 }
 
+
+/*Wrapper per select-option Destinazioni */
+.wrapper{
+    
+    width:200px;
+    padding:20px;
+    height: 150px;
+}

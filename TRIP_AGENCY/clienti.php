@@ -168,7 +168,7 @@
                         
                         <button 
                             name="<?= $cliente_modifica ? 'salva_modifica' : 'aggiungi' ?>" 
-                            class="<?= $cliente_modifica ? 'warning' : 'success' ?>" 
+                            class="btn <?= $cliente_modifica ? 'btn-warning' : 'btn-success' ?>" 
                             type="submit">
                             <?= $cliente_modifica ? 'Salva' : 'Aggiungi' ?>
                         </button>

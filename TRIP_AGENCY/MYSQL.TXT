@@ -37,7 +37,8 @@ CREATE TABLE destinazioni (
     paese VARCHAR(30) NOT NULL,
     prezzo DECIMAL(10,2) NOT NULL,             
     data_partenza DATE NOT NULL,
-    data_ritorno DATE NOT NULL
+    data_ritorno DATE NOT NULL,
+    posti_disponibili NOT NULL
 );
 
 
@@ -72,3 +73,16 @@ CREATE TABLE prenotazioni (
 
     i vincoli ON DELETE CASCADE fanno si che , eliminando una cliente o una destinazione,
                                             vengano cancellate automaticamente anche le prenotazioni collegate
+
+
+
+
+
+* nel bind_param, esiste la tipizzazione  esempio  : "sssssss"
+
+    ogni lettera corrisponde ad un tipo di dato : 
+
+        s -> stringa
+        i -> intero
+        d -> DECIMAL
+        b -> BLOB
