@@ -8,7 +8,7 @@ html, body {
 
 body{
 
-    background-color: antiquewhite;
+    background-color: rgb(75, 44, 4);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     
 }
@@ -23,7 +23,7 @@ main {
 h1, h2, h3 {
 
     font-weight: 600;
-    color: #333;
+    color: #eed303;
 
 }
 
@@ -58,5 +58,11 @@ h1, h2, h3 {
 footer{
 
     margin-top: auto;
+}
+
+p.lead{
+
+    font-size: 1.2rem;
+    color: #eed303;
 }
 

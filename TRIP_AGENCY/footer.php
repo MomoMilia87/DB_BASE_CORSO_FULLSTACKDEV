@@ -1,9 +1,16 @@
 </main> <!-- chiusura main di header-->
 
-<footer class="text-white text-center mt-5 p-5" style="background-color: #0081a7">
+<div class="mb-3">
+  <footer class="text-white text-center mt-5 p-4 rounded m-3 shadow-lg" 
+        style="background: linear-gradient(45deg, #d35400 0%, #3e2723 100%);">
+    
+    <div class="mb-3">
+        <img src="logo.png" alt="Logo Trip Agency" width="60" height="60" class="bg-white rounded-circle p-1 shadow-sm">
+    </div>
 
-    <small>© Trip-Agency <?php echo date("Y"); ?></small>
-
+    <p class="mb-2 fw-bold">Seguici nelle nostre avventure!</p>
+    
+    <small class="opacity-75">© Trip-Agency <?php echo date("Y"); ?></small>
 
 </footer>
 
