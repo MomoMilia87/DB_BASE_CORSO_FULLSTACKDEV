@@ -294,7 +294,7 @@
                                 
                                     download
                                     data-bs-toggle="tooltip"
-                                    tite="Scarica : <?= $row['documento'] ?>">
+                                    title="Scarica : <?= $row['documento'] ?>">
 
                                     <i class="bi bi-file-earmark-check "style="font-size: 1.5rem; color : green"></i>
 
