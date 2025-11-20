@@ -87,7 +87,7 @@
 
     <!--Form-->
     <div class="card mb-4">
-        <div class="card-body">
+        <div class="card-body" style="background-color: #ebc696;">
             <form action="" method="POST">
 
                 <?php if($cliente_modifica): ?>
