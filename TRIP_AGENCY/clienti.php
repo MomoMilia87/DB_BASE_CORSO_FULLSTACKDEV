@@ -16,6 +16,24 @@
     //chiamata POST che prende il gancio del bottone aggiugi del form, prendendo i valori inseriti nei vari campi
     if($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['aggiungi'])){
 
+        $upload = null;
+
+        //controllo del campo documento -> se il file è stato effettivamente caricato
+        //$_FILES -> contiene tutti i file caricati tramite l input
+        //$_FILES['documento']['name'] -> il nome originale del file scelto dall utente
+        //if(!empty($_FILES['documento']['name'])){ -> "solo se un file è stato caricato"
+        //quindi se il campo è vuoto non si tenta l UPLOAD
+
+        if(!empty($_FILES['documento']['name'])){
+
+            //ESTRAE IL NOME DEL FILE SENZA PERCORSO
+            //   "../../nome_file.estensione"   -> "nome_file.estensione"
+            $upload = time() . "_" . basename($_FILES['documento']['name']); //filename
+            //sposto il file dalla posizione tmp/ alla cartella uploads/
+            move_uploaded_file($_FILES['documento']['tmp_name'], "uploads/" . $upload);
+
+        }
+
         //Preparo lo stato stmt -> statement 
         $stmt = $conn->prepare("INSERT INTO clienti (nome, cognome, email, telefono, nazione, codice_fiscale, documento) 
                                 VALUES  (?, ?, ?, ?, ?, ?, ?)");
@@ -33,7 +51,7 @@
 
                 window.location.href = 'clienti.php'
 
-            }, 3000);
+            }, 2500);
 
         </script>
 
@@ -76,6 +94,22 @@
         $stmt->execute();
         //messaggio
         echo "<div class='alert alert-info'>Cliente Modificato correttamente</div>";
+        echo "<div class='alert alert-info'>Cliente modificato correttamente</div>";
+        echo "
+        
+                <script>
+
+                    setTimeout(function () {
+
+                        window.location.href = 'clienti.php'
+
+                    }, 2500);
+
+                </script>
+        
+             ";
+
+        exit;
     }
 
 
@@ -89,6 +123,7 @@
         $conn->query("DELETE FROM clienti WHERE id = $id");
 
         echo "<div class='alert alert-info'>Cliente Cancellato correttamente</div>";
+        
     }
 
     
@@ -190,7 +225,7 @@
                          <!--Pulsante ANNULLA-->
                         <?php if ($cliente_modifica) : ?>
 
-                            <a href="clienti.php" class="btn btn-secondary ms-2">Annulla</a>
+                            <a href=".php" class="btn btn-secondary ms-2">Annulla</a>
 
                         <?php endif;?>
                     </div>
@@ -224,7 +259,7 @@
 
             <thead>
                 <!--Intestazione tabella-->
-                <tr class="text-center">
+                <tr>
 
                     <th>ID</th>
                     <th>Nome</th>
@@ -234,7 +269,7 @@
                     <th>Nazione</th>
                     <th>Codice Fiscale</th>
                     <th>Documento</th>
-                    <th>Azioni</th>
+                    <th class="text-center">Azioni</th>
 
                 </tr>
 
@@ -244,7 +279,7 @@
 
                 <?php while ($row = $result->fetch_assoc()) : ?>
                     
-                    <tr class="text-center">
+                    <tr>
                         <td><?= $row['id'] ?></td>
                         <td><?= $row['nome'] ?></td>
                         <td><?= $row['cognome'] ?></td>
@@ -252,13 +287,33 @@
                         <td><?= $row['telefono'] ?></td>
                         <td><?= $row['nazione'] ?></td>
                         <td><?= $row['codice_fiscale'] ?></td>
-                        <td><?= $row['documento'] ?></td>
                         <td>
+                        <?php if(!empty($row['documento'])) : ?>
+                        
+                                <a href="uploads/<?= $row['documento'] ?>"
+                                
+                                    download
+                                    data-bs-toggle="tooltip"
+                                    tite="Scarica : <?= $row['documento'] ?>">
 
-                            <a class="btn btn-sm btn btn-outline-warning" href="?modifica=<?= $row['id']  ?>">🖊️</a>
-                            <a class="btn btn-sm btn btn-outline-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')">🗑️</a>
+                                    <i class="bi bi-file-earmark-check"style="font-size: 1.5rem;"></i>
+
+                                </a>
+                            
+                        
+                            <?php else: ?>
+                                
+                                <span><i class="bi bi-file-x-fill" style="font-size: 1.5rem;"></i></span>
 
 
+                            <?php endif; ?>
+
+                        </td>
+                        
+                        <td class="text-center">
+
+                            <a class="btn btn-sm btn-warning" href="?modifica=<?= $row['id']  ?>">🖊️</a>
+                            <a class="btn btn-sm btn-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')">🗑️</a>
                         </td>
                     </tr>
 

@@ -270,7 +270,7 @@
 
             <thead>
                 <!--Intestazione tabella-->
-                <tr class="text-center">
+                <tr>
 
                     <th>ID</th>
                     <th>Cliente</th>
@@ -278,7 +278,7 @@
                     <th>Data di Prenotazione</th>
                     <th>Acconto</th>
                     <th>Assicurazione</th>
-                    <th>Azioni</th>
+                    <th class="text-center">Azioni</th>
 
                 </tr>
 
@@ -295,7 +295,7 @@
                         <td><?= $row['data_prenotazione'] ?></td>
                         <td><?= $row['acconto'] ?></td>
                         <td><?= $row['assicurazione'] == 1 ? 'Presente' : 'Non presente' ?></td>
-                        <td>
+                        <td class="text-center">
 
                             <a class="btn btn-sm btn btn-outline-warning " href="?modifica=<?= $row['id']  ?>">🖊️</a>
                             <a class="btn btn-sm btn btn-outline-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')">🗑️</a>

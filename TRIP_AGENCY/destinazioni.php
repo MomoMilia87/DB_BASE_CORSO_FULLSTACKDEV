@@ -33,7 +33,7 @@
 
                 window.location.href = 'destinazioni.php'
 
-            }, 3000);
+            }, 2500);
 
         </script>
 
@@ -227,8 +227,8 @@
                     <th>Prezzo</th>
                     <th>Data di Partenza</th>
                     <th>Data di Ritorno</th>
-                    <th>Posti Disponibili</th>
-                    <th>Azioni</th>
+                    <th class="text-center">Posti Disponibili</th>
+                    <th class="text-center">Azioni</th>
 
                 </tr>
 
@@ -245,8 +245,8 @@
                         <td><?= $row['prezzo'] ?></td>
                         <td><?= $row['data_partenza'] ?></td>
                         <td><?= $row['data_ritorno'] ?></td>
-                        <td><?= $row['posti_disponibili'] ?></td>
-                        <td>
+                        <td class="text-center"><?= $row['posti_disponibili'] ?></td>
+                        <td class="text-center">
 
                             <a class="btn btn-sm btn btn-outline-warning" href="?modifica=<?= $row['id']  ?>">🖊️</a>
                             <a class="btn btn-sm btn btn-outline-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')">🗑️</a>
