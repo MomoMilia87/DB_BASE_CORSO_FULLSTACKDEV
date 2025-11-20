@@ -187,6 +187,10 @@
                             type="submit">
                             <?= $cliente_modifica ? 'Salva' : 'Aggiungi' ?>
                         </button>
+                         <!--Pulsante ANNULLA-->
+                        <?php if ($cliente_modifica) : ?>
+
+                            <a href="clienti.php" class="btn btn-secondary ms-2">Annulla</a>
                     
                     </div>
 

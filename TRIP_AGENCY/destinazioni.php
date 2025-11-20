@@ -180,6 +180,11 @@
                             type="submit">
                             <?= $destinazione_modifica ? 'Salva' : 'Aggiungi' ?>
                         </button>
+
+                         <!--Pulsante ANNULLA-->
+                        <?php if ($destinazione_modifica) : ?>
+
+                            <a href="destinazioni.php" class="btn btn-secondary ms-2">Annulla</a>
                     
                     </div>
 
