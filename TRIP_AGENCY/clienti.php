@@ -296,14 +296,14 @@
                                     data-bs-toggle="tooltip"
                                     tite="Scarica : <?= $row['documento'] ?>">
 
-                                    <i class="bi bi-file-earmark-check"style="font-size: 1.5rem;"></i>
+                                    <i class="bi bi-file-earmark-check "style="font-size: 1.5rem; color : green"></i>
 
                                 </a>
                             
                         
                             <?php else: ?>
                                 
-                                <span><i class="bi bi-file-x-fill" style="font-size: 1.5rem;"></i></span>
+                                <span><i class="bi bi-file-x-fill" style="font-size: 1.5rem; color : red"></i></span>
 
 
                             <?php endif; ?>
@@ -312,8 +312,8 @@
                         
                         <td class="text-center">
 
-                            <a class="btn btn-sm btn-warning" href="?modifica=<?= $row['id']  ?>">🖊️</a>
-                            <a class="btn btn-sm btn-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')">🗑️</a>
+                            <a class="btn btn-sm btn btn-outline-warning" href="?modifica=<?= $row['id']  ?>">🖊️</a>
+                            <a class="btn btn-sm btn btn-outline-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')">🗑️</a>
                         </td>
                     </tr>
 
