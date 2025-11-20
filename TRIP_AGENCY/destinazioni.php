@@ -185,6 +185,8 @@
                         <?php if ($destinazione_modifica) : ?>
 
                             <a href="destinazioni.php" class="btn btn-secondary ms-2">Annulla</a>
+
+                        <?php endif;?>
                     
                     </div>
 

@@ -191,7 +191,8 @@
                         <?php if ($cliente_modifica) : ?>
 
                             <a href="clienti.php" class="btn btn-secondary ms-2">Annulla</a>
-                    
+
+                        <?php endif;?>
                     </div>
 
                 </div>
