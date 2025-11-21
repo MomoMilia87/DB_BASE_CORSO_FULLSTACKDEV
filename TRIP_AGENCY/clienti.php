@@ -86,6 +86,24 @@
     //MODIFICA DEL DATO, SALVATAGGIO 
     if($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['salva_modifica'])){
 
+         if(!empty($_FILES['documento']['name'])){
+
+            //ESTRAE IL NOME DEL FILE SENZA PERCORSO
+            //   "../../nome_file.estensione"   -> "nome_file.estensione"
+            $nuovoDocumento = time() . "_" . basename($_FILES['documento']['name']); //filename
+            //sposto il file dalla posizione tmp/ alla cartella uploads/
+            move_uploaded_file($_FILES['documento']['tmp_name'], "uploads/" . $nuovoDocumento);
+
+        }else{
+
+
+            $nuovoDocumento = $_POST['documento_esistente'];
+
+        }
+
+
+
+
         //PREPARE
         $stmt = $conn->prepare("UPDATE clienti SET nome=?, cognome=?, email=?, telefono=?, nazione=?, codice_fiscale=?, documento=? WHERE id=?");
         //BINDING
@@ -94,7 +112,6 @@
         $stmt->execute();
         //messaggio
         echo "<div class='alert alert-info'>Cliente Modificato correttamente</div>";
-        echo "<div class='alert alert-info'>Cliente modificato correttamente</div>";
         echo "
         
                 <script>
@@ -138,7 +155,7 @@
     <!--Form-->
     <div class="card mb-4">
         <div class="card-body" style="background-color: #edd7bdff;">
-            <form action="" method="POST">
+            <form action="" method="POST" enctype="multipart/form-data">
 
                 <?php if($cliente_modifica): ?>
                 
@@ -204,6 +221,14 @@
                         
                         required>
                     </div>
+
+                     <!--Ottengo il VECCHIO FILE DAL DATABASE-->
+                    <?php if ($cliente_modifica) : ?>
+
+                        <input type="hidden" name="documento_esistente" value="<?= $cliente_modifica['documento'] ?>">
+
+                    <?php endif; ?>
+
                     
                     <div class="col-md-6">
                         <label style="font-weight: 600;" for="">Documento : </label>
