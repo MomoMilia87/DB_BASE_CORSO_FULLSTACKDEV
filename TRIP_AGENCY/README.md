@@ -60,6 +60,7 @@ Ecco alcune schermate del gestionale:
 ### Destinazioni e Prenotazioni
 ![Destinazioni](screen/screenshot7.png)
 ![Prenotazioni](screen/screenshot8.png)
+![Fattura](screen/screenshot8b.png)
 
 ### Ricerca e Statistiche
 ![Ricerca](screen/screenshot9.png)
