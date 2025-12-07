@@ -4,138 +4,269 @@
 
 
     //Logica per impaginazione
-    $perPagina = 10;  // n elementi mostrati per pagina
+    $perPagina = 5;  // n elementi mostrati per pagina
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $offset = ($page - 1) * $perPagina;
 
-
+    
     //QUERY PER ESTRARRE DATI PER SELECT DROPDOWN Clienti e Destinazioni
     $clienti = $conn->query("SELECT id, nome, cognome FROM clienti");
-    $destinazioni = $conn->query("SELECT id, citta, paese FROM destinazioni");
+    $destinazioni = $conn->query("SELECT id, citta, paese, posti_disponibili FROM destinazioni");
 
-
+    //INIZIALIZZO LA prenotazione_modifica a NULL
+    $prenotazione_modifica = null;
 
     //LOGICA DI AGGIUNTA
     //chiamata POST che prende il gancio del bottone aggiugi del form, prendendo i valori inseriti nei vari campi
+    
+    //Variabile per errori
+    $errore_posti = null;
+
     if($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['aggiungi'])){
 
-        //Preparo lo stato stmt -> statement 
-        $stmt = $conn->prepare("INSERT INTO prenotazioni (id_cliente, id_destinazione, acconto, assicurazione) 
-                                VALUES  (?, ?, ?, ?)");
-        //Binding dei parametri e tipizzo
-        $stmt->bind_param("iiii", $_POST['id_cliente'], $_POST['id_destinazione'],$_POST['acconto'],$_POST['assicurazione']);
-        
-        //eseguo lo statement
+        $id_cliente = intval($_POST['id_cliente']);
+        $id_destinazione = intval($_POST['id_destinazione']);
+        $acconto = floatval($_POST['acconto']);
+        $assicurazione = intval($_POST['assicurazione']);
+        $numero_persone = intval($_POST['numero_persone']);
+
+        //Recupero posti disponibili totali
+        $stmt = $conn->prepare("SELECT posti_disponibili FROM destinazioni WHERE id = ?");
+        $stmt->bind_param("i", $id_destinazione);
         $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
 
-        //Redirect post inserimento, che grazie alla funzione setTimeout di Js, ritarderà il redirect 
-        //verso le prenotazioni
-        echo "<div class='alert alert-info'>Prenotazione Aggiunta correttamente</div>";
-        echo "
-        
-                <script>
+        if(!$res){
+            
+            $errore_posti = "Destinazione non trovata.";
 
-                    setTimeout(function () {
+        } else {
+            
+            $posti_disponibili = intval($res['posti_disponibili']);
 
-                        window.location.href = 'prenotazioni.php'
+            if($numero_persone > $posti_disponibili){
+                $errore_posti = "Richiesti $numero_persone posti, ma disponibili solo $posti_disponibili.";
+            }
+        }
 
-                    }, 2500);
+        //Se NON ci sono errori → inserisco
+        if(!$errore_posti){
 
-                </script>
-        
+            // INIZIO TRANSAZIONE
+            $conn->begin_transaction();
 
-             ";
-        exit;
+            try {
+                //Inserisco prenotazione
+                $stmt = $conn->prepare("
+                    INSERT INTO prenotazioni 
+                    (id_cliente, id_destinazione, acconto, assicurazione, numero_persone)
+                    VALUES (?, ?, ?, ?, ?)
+                ");
+                $stmt->bind_param("iiidi", 
+                    $id_cliente,
+                    $id_destinazione,
+                    $acconto,
+                    $assicurazione,
+                    $numero_persone
+                );
+                $stmt->execute();
 
+                //Aggiorno posti
+                $stmt = $conn->prepare("
+                    UPDATE destinazioni 
+                    SET posti_disponibili = posti_disponibili - ?
+                    WHERE id = ?
+                ");
+
+                $stmt->bind_param("ii", $numero_persone, $id_destinazione);
+                $stmt->execute();
+
+                // COMMIT
+                $conn->commit();
+
+                echo "<div class='alert alert-success'>Prenotazione aggiunta! Posti aggiornati.</div>";
+                echo "<script>
+                        setTimeout(()=>{
+                                window.location.href='prenotazioni.php'
+                            },2000)
+                     </script>";
+
+            } catch (Exception $e) {
+                // ROLLBACK IN CASO DI ERRORE
+                $conn->rollback();
+                echo "<div class='alert alert-danger'>Errore durante la prenotazione: " . $e->getMessage() . "</div>";
+            }
+        }
     }
+
+       
 
 
 
 
 
     //LOGICA DI MODIFICA
-    $prenotazione_modifica = null;
-
-    if (isset($_GET['modifica'])){
-
-
-        $res = $conn->query("SELECT * FROM prenotazioni WHERE id = " . intval($_GET['modifica']));
-
-        $prenotazione_modifica = $res->fetch_assoc();
-
-    }
-
-
-
-
-
-    //MODIFICA DEL DATO, SALVATAGGIO 
     if($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['salva_modifica'])){
 
+        $id = intval($_POST['id']);
+        $id_cliente = intval($_POST['id_cliente']);
+        $id_destinazione = intval($_POST['id_destinazione']);
+        $acconto = floatval($_POST['acconto']);
+        $assicurazione = intval($_POST['assicurazione']);
+        $numero_persone_nuovo = intval($_POST['numero_persone']);
 
-        $assicurazione = intval($_POST['assicurazione']);//valorizza se vero o falso la presenza assicurazione
+        //Prendo i vecchi dati
+        $old = $conn->query("SELECT * FROM prenotazioni WHERE id = $id")->fetch_assoc();
+        $numero_persone_vecchio = $old['numero_persone'];
+        $id_destinazione_vecchio = $old['id_destinazione'];
 
-        //PREPARE
-        $stmt = $conn->prepare("UPDATE prenotazioni SET id_cliente=?, id_destinazione=?,  acconto=?, assicurazione=? WHERE id=?");
-        //BINDING
-        $stmt->bind_param("iiiii" ,$_POST['id_cliente'],$_POST['id_destinazione'],$_POST['acconto'], $assicurazione, $_POST['id']);
-        //ESECUZIONE QUERY
-        $stmt->execute();
-        //messaggio
+        //Se cambio destinazione, restituisco prima i posti alla vecchia
+        if($id_destinazione_vecchio != $id_destinazione){
+            //Restituisco i posti alla vecchia destinazione
+            $conn->query("
+                UPDATE destinazioni
+                SET posti_disponibili = posti_disponibili + $numero_persone_vecchio
+                WHERE id = $id_destinazione_vecchio
+            ");
 
-        //Redirect post inserimento, che grazie alla funzione setTimeout di Js, ritarderà il redirect 
-        //verso le prenotazioni
-        echo "<div class='alert alert-info'>Prenotazione Modificata correttamente</div>";
-        echo "
-        
-                <script>
+            //Controllo la ridisponibilità nella nuova destinazione
+            $res = $conn->query("SELECT posti_disponibili FROM destinazioni WHERE id = $id_destinazione")->fetch_assoc();
+            
+            if($numero_persone_nuovo > $res['posti_disponibili']){
 
-                    setTimeout(function () {
+                $errore_posti = "Nella nuova destinazione non ci sono abbastanza posti.";
 
-                        window.location.href = 'prenotazioni.php'
+            } else {
 
-                    }, 2500);
+                //Sottraggo sulla nuova destinazione
+                $conn->query("
+                    
+                    UPDATE destinazioni
+                    SET posti_disponibili = posti_disponibili - $numero_persone_nuovo
+                    WHERE id = $id_destinazione
+                
+                ");
+            }
 
-                </script>
-        
-             ";
+        } else {
+            //Stessa destinazione, controllo variazione persone
+            $diff = $numero_persone_nuovo - $numero_persone_vecchio;
 
-        exit;
+            if($diff > 0){
+
+                $res = $conn->query("
+                    
+                        SELECT posti_disponibili FROM destinazioni WHERE id = $id_destinazione
+                
+                    ")->fetch_assoc();
+
+                if($diff > $res['posti_disponibili']){
+                    
+                    $errore_posti = "Non ci sono abbastanza posti per aumentare le persone.";
+               
+                }else {
+                   
+                    $conn->query("
+                        UPDATE destinazioni
+                        SET posti_disponibili = posti_disponibili - $diff
+                        WHERE id = $id_destinazione
+                    ");
+                }
+
+            } else if($diff < 0){
+                
+                //Sto diminuendo i posti e li restituisco
+                $diffPositiva = abs($diff);
+
+                $conn->query("
+                   
+                    UPDATE destinazioni
+                    SET posti_disponibili = posti_disponibili + $diffPositiva
+                    WHERE id = $id_destinazione
+                
+                ");
+            }
+        }
+
+        if(!$errore_posti){
+            
+            $stmt = $conn->prepare("
+                UPDATE prenotazioni 
+                SET id_cliente=?, id_destinazione=?, acconto=?, assicurazione=?, numero_persone=?
+                WHERE id=?
+            ");
+            
+            $stmt->bind_param("iiidii",
+                $id_cliente,
+                $id_destinazione,
+                $acconto,
+                $assicurazione,
+                $numero_persone_nuovo,
+                $id
+            );
+           
+            $stmt->execute();
+
+            echo "<div class='alert alert-info'>Prenotazione modificata!</div>";
+            echo "<script>
+                        setTimeout(()=>{
+                            window.location.href='prenotazioni.php'
+                        },2000)
+
+                </script>";
+        }
     }
 
 
 
 
 
-    //CANCELLAZIONE CLIENTE
+    //CANCELLAZIONE PRENOTAZIONE
     if(isset($_GET['elimina'])){
 
         $id = intval($_GET['elimina']);
+
+        //Recupero prenotazione
+        $p = $conn->query("SELECT * FROM prenotazioni WHERE id = $id")->fetch_assoc();
+
+        //Restituisco posti
+        $conn->query("
+            UPDATE destinazioni
+            SET posti_disponibili = posti_disponibili + {$p['numero_persone']}
+            WHERE id = {$p['id_destinazione']}
+        ");
+
+        //Elimino prenotazione
         $conn->query("DELETE FROM prenotazioni WHERE id = $id");
 
-        echo "<div class='alert alert-info'>Prenotazione Cancellata correttamente</div>";
+        echo "<div class='alert alert-info'>Prenotazione eliminata. Posti ripristinati.</div>";
     }
 
 
-    //vado a conteggiare il totale dei clienti con query
+
+
+
+  
+    //LISTA PAGINATA PRENOTAZIONI
     $total = $conn->query("SELECT COUNT(*) as t FROM prenotazioni")->fetch_assoc()['t'];
-    $totalPages = ceil($total / $perPagina); // il numero di pagine della navigazione
+    $totalPages = ceil($total / $perPagina);
 
-    //QUERY PER ordinare i dati in modo DECRESCENTE IMPAGINATI PER valore di "$perPagina" 
-    //$result = $conn->query("SELECT * FROM prenotazioni ORDER BY id ASC LIMIT $perPagina OFFSET $offset");
-
-
-
-    //QUERY ASSOCIAZIONE JOIN TRA LE DUE TABELLE 
-
-    $stmt = $conn->prepare("SELECT p.id, c.nome, c.cognome, d.citta, d.paese, p.data_prenotazione, p.acconto, p.assicurazione
-                            FROM prenotazioni p
-                            JOIN clienti c ON p.id_cliente = c.id
-                            JOIN destinazioni d ON p.id_destinazione = d.id
-                            ORDER BY p.id DESC LIMIT ? OFFSET ?
-                            ");
+    $stmt = $conn->prepare("
+        
+        SELECT p.id, c.nome, c.cognome, d.citta, d.paese, 
+            p.data_prenotazione, p.acconto, p.assicurazione, p.numero_persone
+        FROM prenotazioni p
+        JOIN clienti c ON p.id_cliente = c.id
+        JOIN destinazioni d ON p.id_destinazione = d.id
+        ORDER BY p.id DESC
+        LIMIT ? OFFSET ?
+    
+        ");
+    
     $stmt->bind_param("ii", $perPagina, $offset);
+    
     $stmt->execute();
+    
     $result = $stmt->get_result();
 
 ?>
@@ -148,17 +279,30 @@
 
     <!--Form-->
     <div class="card mb-4">
-        <div class="card-body" style="background-color: #edd7bdff;">
+        <div class="card-body">
 
 
             <form action="" method="POST">
 
 
+                <!--Alert posti prenotazione-->
+                <?php if(isset($errore_posti)): ?>
+
+                    <div class="alert alert-danger mb-3">
+                        <?= $errore_posti ?>
+                    </div>
+                    
+                <?php endif; ?>
+
+                <!--ID NASCOSTO-->
                 <?php if($prenotazione_modifica): ?>
                 
                     <input type="hidden" name="id" value="<?= $prenotazione_modifica['id'] ?>">
 
                 <?php endif; ?>
+
+
+
 
                 <div class="row g-3">
                     
@@ -205,6 +349,12 @@
 
                     </div>
                     
+                    <!--Numero persone per la prenotazione-->
+                    <div class="col-md-4">
+                        <label style="font-weight: 600;">Persone:</label>
+                        <input type="number" name="numero_persone" min="1" class="form-control" required>
+                    </div>
+
                    
                     
              
@@ -265,7 +415,7 @@
 
 
     <!--Tabella-->
-    <div>
+    <div class="table-responsive">
         <table class="table table-striped">
 
             <thead>
@@ -276,6 +426,7 @@
                     <th>Cliente</th>
                     <th>Destinazione</th>
                     <th>Data di Prenotazione</th>
+                    <th>Persone</th>
                     <th>Acconto</th>
                     <th>Assicurazione</th>
                     <th class="text-center">Azioni</th>
@@ -288,17 +439,19 @@
 
                 <?php while ($row = $result->fetch_assoc()) : ?>
                     
-                    <tr class="text-center">
+                    <tr>
                         <td><?= $row['id'] ?></td>
-                        <td><?= $row['nome'] . ' ' . $row['cognome'] ?></td>
-                        <td><?= $row['citta'] ?></td>
-                        <td><?= $row['data_prenotazione'] ?></td>
-                        <td><?= $row['acconto'] ?></td>
+                        <td><?= htmlspecialchars($row['nome'] . ' ' . $row['cognome']) ?></td>
+                        <td><?= htmlspecialchars($row['citta']) ?></td>
+                        <td><?= htmlspecialchars($row['data_prenotazione']) ?></td>
+                        <td><?= htmlspecialchars($row['numero_persone']) ?></td>
+                        <td><?= htmlspecialchars($row['acconto']) ?> €</td>
                         <td><?= $row['assicurazione'] == 1 ? 'Presente' : 'Non presente' ?></td>
                         <td class="text-center">
-
-                            <a class="btn btn-sm btn btn-outline-warning " href="?modifica=<?= $row['id']  ?>">🖊️</a>
-                            <a class="btn btn-sm btn btn-outline-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')">🗑️</a>
+                            
+                            <a class="btn btn-sm btn-info" href="fattura.php?id=<?= $row['id'] ?>" target="_blank" title="Stampa Fattura"><i class="bi bi-printer"></i></a>
+                            <a class="btn btn-sm btn-warning" href="?modifica=<?= $row['id']  ?>"><i class="bi bi-pen"></i></a>
+                            <a class="btn btn-sm btn-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')"><i class="bi bi-trash"></i></a>
 
 
                         </td>
@@ -313,18 +466,16 @@
     </div>
 
 
-
     <!--Paginazione-->
     <nav>
 
-        <ul class="pagination">
+        <ul class="pagination pagination_personal">
 
-            <?php for($i = 1; $i <= $totalPages; $i++ ) : ?>
 
-                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+            <?php for($i=1;$i<=$totalPages;$i++): ?>
+                <li class="page-item <?= $i==$page?'active':'' ?>">
                     <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
-                </li>   
-
+                </li>
             <?php endfor; ?>
 
 

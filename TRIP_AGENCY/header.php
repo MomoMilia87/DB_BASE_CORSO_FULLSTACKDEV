@@ -1,55 +1,98 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRIP_AGENCY</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.min.js" integrity="sha512-n/G+dROKbKL3GVngGWmWfwK0yPctjZQM752diVYnXZtD/48agpUKLIn0xDQL9ydZ91x6BiOmTIFwWjjFi2kEFg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.13.1/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style.css?v<?= time() ?>">
-</head>
-<body>
+
+<?php
+
+    //RECUPERO IL NOME DELLA PAGINA CORRENTE
+    $currentPage = basename($_SERVER['PHP_SELF']);
+    //questo restituisce  : clienti.php, destinazioni.php...
+
+?>
+
+
+
+<?php
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    // Controllo se l'utente è loggato (escludo login.php per evitare loop)
+    if (!isset($_SESSION['user_id']) && basename($_SERVER['PHP_SELF']) != 'login.php' && basename($_SERVER['PHP_SELF']) != 'setup_db.php') {
+        header("Location: login.php");
+        exit;
+    }
+?>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Happy Skies Travel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!--ICONS-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-<nav class="navbar navbar-expand-lg navbar-dark rounded m-3 shadow-lg" 
-     style="background: linear-gradient(45deg, #d35400 0%, #3e2723 100%);">
-    <div class="container-fluid">
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
 
-        <!--Logo o Brand-->
-        <a class="navbar-brand d-flex align-items-center" href="index.php">
-            <img src="logo.png" alt="" style="height: 50px; width: auto;">
-            Trip-Agency
-        </a>
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
 
-        <!--Bottone Hamburgher-->
-        <button 
-                class="navbar-toggler"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarNav"
-                aria-controls="navbarNav"
-                aria-expanded="false"
-                aria-label="Toggle navigation"
-        >
+</head>
+  <body>
+    
+
+    <!--NAVBAR-->
+    <nav class="navbar navbar-expand-lg bg-body-tertiary mb-5 shadow-sm">
+        <div class="container-fluid">
+          
+            <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="index.php">
+                <img src="logo.png?v=<?php echo time(); ?>" alt="Logo" style="height: 50px; margin-right: 10px; border-radius: 50%;">
+                Happy Skies Travel
+            </a>
+          
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
-        </button>
+          </button>
+          
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage == 'index.php' ? 'active' : '' ?>" aria-current="page" href="index.php">Home</a>
+                </li>
+              
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage == 'clienti.php' ? 'active' : '' ?>" href="clienti.php">Clienti</a>
+                </li>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <div class="navbar-nav ms-auto">
-                <!--Link del menu-->
-                <a href="clienti.php" class="nav-link">Clienti</a>
-                <a href="destinazioni.php" class="nav-link">Destinazioni</a>
-                <a href="prenotazioni.php" class="nav-link">Prenotazioni</a>
-                <a href="ricerca.php" class="nav-link">Ricerca</a>
-                <a href="statistiche.php" class="nav-link">Statistiche</a>
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage == 'destinazioni.php' ? 'active' : '' ?>" href="destinazioni.php">Destinazioni</a>
+                </li>
 
-            </div>
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage == 'prenotazioni.php' ? 'active' : '' ?>" href="prenotazioni.php">Prenotazioni</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage == 'statistiche.php' ? 'active' : '' ?>" href="statistiche.php">Statistiche</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage == 'ricerca.php' ? 'active' : '' ?>" href="ricerca.php">Ricerca</a>
+                </li>
+             
+            </ul>
+            
+            <?php if(isset($_SESSION['user_id'])): ?>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-muted small">Ciao, <?= htmlspecialchars($_SESSION['user_email']) ?></span>
+                    <a href="logout.php" class="btn btn-sm btn-outline-danger">Esci</a>
+                </div>
+            <?php endif; ?>
+
+          </div>
         </div>
-    </div>
-</nav>
-
-<main class="container mt-4">
+      </nav>
 
 
-
-
+    <div class="container mt-4">

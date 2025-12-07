@@ -4,7 +4,7 @@
 
 
     //Logica per impaginazione
-    $perPagina = 10;  // n elementi mostrati per pagina
+    $perPagina = 5;  // n elementi mostrati per pagina
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $offset = ($page - 1) * $perPagina;
 
@@ -26,21 +26,6 @@
         $stmt->execute();
 
         echo "<div class='alert alert-success'>Destinazione Aggiunta!</div>";
-        echo "
-        <script>
-
-            setTimeout(function () {
-
-                window.location.href = 'destinazioni.php'
-
-            }, 2500);
-
-        </script>
-
-
-
-        ";
-        exit;
 
 
     }
@@ -102,7 +87,7 @@
 
     <!--Form-->
     <div class="card mb-4">
-        <div class="card-body" style="background-color: #edd7bdff;">
+        <div class="card-body">
             <form action="" method="POST">
 
                 <?php if($destinazione_modifica): ?>
@@ -181,7 +166,7 @@
                             <?= $destinazione_modifica ? 'Salva' : 'Aggiungi' ?>
                         </button>
 
-                         <!--Pulsante ANNULLA-->
+                        <!--Pulsante ANNULLA-->
                         <?php if ($destinazione_modifica) : ?>
 
                             <a href="destinazioni.php" class="btn btn-secondary ms-2">Annulla</a>
@@ -214,12 +199,12 @@
 
 
     <!--Tabella-->
-    <div>
+    <div class="table-responsive">
         <table class="table table-striped">
 
             <thead>
                 <!--Intestazione tabella-->
-                <tr class="text-center">
+                <tr>
 
                     <th>ID</th>
                     <th>Città</th>
@@ -238,7 +223,7 @@
 
                 <?php while ($row = $result->fetch_assoc()) : ?>
                     
-                    <tr class="text-center">
+                    <tr>
                         <td><?= $row['id'] ?></td>
                         <td><?= $row['citta'] ?></td>
                         <td><?= $row['paese'] ?></td>
@@ -248,8 +233,8 @@
                         <td class="text-center"><?= $row['posti_disponibili'] ?></td>
                         <td class="text-center">
 
-                            <a class="btn btn-sm btn btn-outline-warning" href="?modifica=<?= $row['id']  ?>">🖊️</a>
-                            <a class="btn btn-sm btn btn-outline-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')">🗑️</a>
+                            <a class="btn btn-sm btn-warning" href="?modifica=<?= $row['id']  ?>"><i class="bi bi-pen"></i></a>
+                            <a class="btn btn-sm btn-danger" href="?elimina=<?= $row['id']  ?>" onclick="return confirm ('Sicuro?')"><i class="bi bi-trash"></i></a>
 
 
                         </td>
@@ -268,7 +253,7 @@
     <!--Paginazione-->
     <nav>
 
-        <ul class="pagination">
+        <ul class="pagination pagination_personal">
 
             <?php for($i = 1; $i <= $totalPages; $i++ ) : ?>
 

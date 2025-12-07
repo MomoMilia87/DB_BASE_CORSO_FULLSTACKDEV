@@ -1,126 +1,102 @@
 <?php 
-
       include 'header.php'; 
       include 'db.php'; 
 
+      // QUERY 1: Prenotazioni per mese (Anno corrente)
+      $anno_corrente = date("Y");
+      $sql_prenotazioni = "
+        SELECT MONTH(data_prenotazione) as mese, COUNT(*) as totale 
+        FROM prenotazioni 
+        WHERE YEAR(data_prenotazione) = $anno_corrente
+        GROUP BY MONTH(data_prenotazione)
+        ORDER BY mese
+      ";
+      $res_pren = $conn->query($sql_prenotazioni);
+      
+      $dati_prenotazioni = array_fill(1, 12, 0); // Array 1-12 inizializzato a 0
+      while($row = $res_pren->fetch_assoc()){
+          $dati_prenotazioni[$row['mese']] = $row['totale'];
+      }
+
+      // QUERY 2: Entrate per mese (Acconti)
+      $sql_entrate = "
+        SELECT MONTH(data_prenotazione) as mese, SUM(acconto) as totale 
+        FROM prenotazioni 
+        WHERE YEAR(data_prenotazione) = $anno_corrente
+        GROUP BY MONTH(data_prenotazione)
+        ORDER BY mese
+      ";
+      $res_entrate = $conn->query($sql_entrate);
+
+      $dati_entrate = array_fill(1, 12, 0);
+      while($row = $res_entrate->fetch_assoc()){
+          $dati_entrate[$row['mese']] = $row['totale'];
+      }
+
+      // Preparo dati per JS
+      $json_prenotazioni = json_encode(array_values($dati_prenotazioni));
+      $json_entrate = json_encode(array_values($dati_entrate));
 ?>
 
-
-
-<h2>Statistiche</h2>
-
-
-<form action="" method="GET" class="row g-3 mb-4">
-
-    <div class="col-md-3">
-        <label for="">Anno</label>
-            <select name="anno" id="" class="form-select">
-                <option value="">Scegli</option>
-            </select>
-    </div>
-
-    <div class="col-md-3">
-        <label for="">Destinazione</label>
-            <select name="destinazione" id="" class="form-select">
-                <option value="">Tutte</option>
-            </select>
-    </div>
-
-    <div class="col-md-3 d-flex align-items-end">
-        <button class="btn btn-primary">Aggiorna</button>
-    </div>
-
-    <div class="col-md-3 d-flex align-items-end justify">
-        <a href="statistiche.php" class="btn btn-outline-success">Esporta dati in CSV</a>
-    </div>
-
-
-</form>
-
-
+<h2>Statistiche (Anno <?= $anno_corrente ?>)</h2>
 
 <div class="row">
 
     <div class="col-md-6 mb-4 mt-4">
         <div class="card p-3">
             <h5 class="text-center">Prenotazioni per mese</h5>
-
-            <!--Chart a linee-->
             <canvas id="lineaPrenotazioni"></canvas>
-            
-            <button class="btn btn-sm btn-outline-secondary mt-3">
-                Scarica PNG
-            </button>
         </div>
-
-
     </div>
 
     <div class="col-md-6 mb-4 mt-4">
         <div class="card p-3">
-            <h5 class="text-center">Entrate Mensili</h5>
-
-            <!--Chart a barre-->
+            <h5 class="text-center">Entrate Mensili (Acconti)</h5>
             <canvas id="barEntrate"></canvas>
-            
-            <button class="btn btn-sm btn-outline-secondary mt-3">
-                Scarica PNG
-            </button>
         </div>
     </div>
 
-
 </div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-  const ctx = document.getElementById('lineaPrenotazioni');
+  const mesi = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
+  // GRAFICO PRENOTAZIONI
+  const ctx = document.getElementById('lineaPrenotazioni');
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+      labels: mesi,
       datasets: [{
-        label: '# of Votes',
-        data: [12, 19, 3, 5, 2, 3],
-        borderWidth: 1
+        label: 'Numero Prenotazioni',
+        data: <?= $json_prenotazioni ?>,
+        borderColor: 'rgba(106, 5, 123, 1)',
+        tension: 0.1,
+        fill: true,
+        backgroundColor: 'rgba(75, 192, 192, 0.2)'
       }]
     },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
+    options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
-</script>
 
-
-<script>
+  // GRAFICO ENTRATE
   const ctx2 = document.getElementById('barEntrate');
-
   new Chart(ctx2, {
     type: 'bar',
     data: {
-      labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+      labels: mesi,
       datasets: [{
-        label: '# of Votes',
-        data: [12, 19, 3, 5, 2, 3],
+        label: 'Entrate (€)',
+        data: <?= $json_entrate ?>,
+        backgroundColor: 'rgba(116, 12, 120, 0.6)',
+        borderColor: 'rgba(87, 10, 106, 1)',
         borderWidth: 1
       }]
     },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    }
+    options: { scales: { y: { beginAtZero: true } } }
   });
 </script>
-
 
 <?php include 'footer.php'; ?>

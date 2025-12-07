@@ -1,143 +1,221 @@
-<?php  include 'header.php' ?>
-
-<?php  include 'db.php' ?>
-
-<?php  include 'header.php' ?>
-
-<?php  include 'db.php' ?>
-
+<?php include 'header.php'; ?>
+<?php include 'db.php'; ?>
 
 <?php
 
-    //impaginazione
+  
+    //IMPOSTAZIONI PAGINAZIONE
+    //Numero di risultati visibili per pagina
     $perPagina = 10;
+
+    //Recupero il numero della pagina se non esiste = 1
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+
+    //Offset quanti record devo saltare per mostrare la pagina attuale
     $offset = ($page - 1) * $perPagina;
 
-
-    //salvo in varibaili le GET
-
-    $nome_cliente = $_GET['nome_cliente'] ?? '';
-    $paese = $_GET['paese'] ?? '';
-    $citta = $_GET['citta'] ?? '';
-    $prezzo_max = $_GET['prezzo_max'] ?? '';
-    $data = $_GET['data'] ?? '';
+    //RECUPERO VALORI DEL FORM DI RICERCA
+    //Se l utente ha inserito valori nel form li salvo nelle variabili,se vuoti metto stringa vuota
     
+    $nome_cliente = $_GET['nome_cliente'] ?? '';
+    $paese        = $_GET['paese'] ?? '';
+    $citta        = $_GET['citta'] ?? '';
+    $prezzo_max   = $_GET['prezzo_max'] ?? '';
+    $data         = $_GET['data'] ?? '';
+    $posti        = $_GET['posti'] ?? '';
 
 
-    //Costruzione della QUERY
 
-    $where = "WHERE 1=1"; // PARTO DA UNA CONDIZIONE CHE è SEMPRE VERA
-    $params = []; //CONTIENE I VALORI PER ? (PLACEHOLDER DELLA QUERY)
-    $types = ''; // CONTINENE IL BINDING (ssid)
+   
+    //COSTRUZIONE DINAMICA DELLA QUERY (ricerca con filtri)
+   
+    //"WHERE 1=1" mi permette di aggiungere AND dinamicamente senza problemi di sintassi
+    $where = "WHERE 1=1";
 
-    //se sto facendo la ricerca per nome
-    if($nome_cliente !== ''){
+    //Array dei valori da passare ai placeholder della query
+    $params = [];
 
+    //Tipi dei parametri (s = string, i = int, d = double)
+    $types = '';
+
+
+
+    //FILTRO: Nome o Cognome Cliente
+    if ($nome_cliente !== '') {
+
+        //Cerco sia per nome che per cognome, uso LIKE perché può contenere parte del nome
         $where .= " AND (c.nome LIKE ? OR c.cognome LIKE ?)";
+
+        //I parametri vengono aggiunti due volte(per nome e cognome)
         $params[] = "%$nome_cliente%";
-        $types .= 's';
+        $params[] = "%$nome_cliente%";
 
+        //Tipi dei due parametri 2 stringhe
+        $types .= 'ss';
     }
-    if($paese !== ''){
 
-        $where .= " AND (d.paese LIKE ?)";
+
+
+    //FILTRO: Paese
+    if ($paese !== '') {
+
+        $where .= " AND d.paese LIKE ?";
         $params[] = "%$paese%";
         $types .= 's';
-
     }
-    if($citta !== ''){
 
-        $where .= " AND (d.citta LIKE ?)";
+
+
+    //FILTRO: Città
+    if ($citta !== '') {
+
+        $where .= " AND d.citta LIKE ?";
         $params[] = "%$citta%";
         $types .= 's';
-
     }
-    if($prezzo_max !== ''){
 
-        $where .= " AND (d.prezzo <= ? )";
+
+
+    //FILTRO: Prezzo massimo
+    if ($prezzo_max !== '') {
+
+        $where .= " AND d.prezzo <= ?";
         $params[] = floatval($prezzo_max);
         $types .= 'd';
-
     }
-    if($data !== ''){
 
-        $where .= " AND (p.data_prenotazione = ? )";
+
+
+    //FILTRO: Data prenotazione
+    if ($data !== '') {
+
+        $where .= " AND p.data_prenotazione = ?";
         $params[] = $data;
         $types .= 's';
-
     }
+
+
+
+    //FILTRO: Posti disponibili reali
+    //ORA i posti disponibili si trovano nella tabella "destinazioni"
+    //perché li aggiorniamo dinamicamente nella pagina prenotazioni.php
+    if ($posti !== '') {
+
+        //MOSTRO SOLO destinazioni che hanno almeno X posti disponibili
+        $where .= " AND d.posti_disponibili >= ?";
+        $params[] = intval($posti);
+        $types .= 'i';
+    }
+
+
  
+    // CONTEGGIO DEI RISULTATI TOTALI (per paginazione)
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) AS total
+        FROM prenotazioni p
+        JOIN clienti c     ON p.id_cliente = c.id
+        JOIN destinazioni d ON p.id_destinazione = d.id
+        $where
+    ");
 
-
-    //conteggio totale
-
-    $stmt = $conn->prepare("SELECT COUNT(*) as total 
-                            FROM prenotazioni p
-                            JOIN clienti c ON p.id_cliente = c.id
-                            JOIN destinazioni d ON p.id_destinazione = d.id
-                            $where");
-    if($types !== '') $stmt->bind_param($types, ...$params);
+    //Se ci sono parametri li bindo
+    if ($types !== '') $stmt->bind_param($types, ...$params);
 
     $stmt->execute();
+
+    //Numero totale dei risultati trovati
     $total = $stmt->get_result()->fetch_assoc()['total'];
+
+    //Totale pagine
     $totalPages = ceil($total / $perPagina);
 
 
-    //Risultati impaginati
 
-    $stmt = $conn->prepare("SELECT p.id, c.nome, c.cognome, d.citta, d.paese, d.prezzo, p.data_prenotazione
-                            FROM prenotazioni p
-                            JOIN clienti c ON p.id_cliente = c.id
-                            JOIN destinazioni d ON p.id_destinazione = d.id
-                            $where ORDER BY p.id DESC LIMIT ? OFFSET ?");
-    
+    //QUERY FINALE CHE MOSTRA I RISULTATI
+    //Aggiungo LIMIT e OFFSET
+    $stmt = $conn->prepare("
+        SELECT 
+            p.id, 
+            c.nome, 
+            c.cognome, 
+            d.citta, 
+            d.paese, 
+            d.prezzo, 
+            p.data_prenotazione
+        FROM prenotazioni p
+        JOIN clienti c     ON p.id_cliente = c.id
+        JOIN destinazioni d ON p.id_destinazione = d.id
+        $where
+            ORDER BY p.id DESC
+            LIMIT ? OFFSET ?
+    ");
+
+    //Aggiungo gli ultimi parametri (limit e offset)
     $params[] = $perPagina;
     $params[] = $offset;
+
     $types .= "ii";
+
+    //Bind parametri e tipi
     $stmt->bind_param($types, ...$params);
+
     $stmt->execute();
+
+    //Ottengo i risultati
     $result = $stmt->get_result();
-
-
-
-
-
-
-
-
-
-
-
-
 
 ?>
 
 
 
-
-
-
-
-
     <h2>Ricerca Prenotazioni</h2>
 
+
+
+    <!--FORM DI RICERCA-->
     <form action="" method="GET">
 
-        <div><input type="text" name="nome_cliente"value="<?=  htmlspecialchars($nome_cliente)  ?>" class="form-control" placeholder="Cliente.."></div>
-        <div><input type="text" name="paese" value="<?=  htmlspecialchars($paese)  ?>" class="form-control" placeholder="Paese"></div>
-        <div><input type="text" name="citta" value="<?=  htmlspecialchars($citta)  ?>" class="form-control" placeholder="Città.."></div>
-        <div><input type="number" name="prezzo_max" value="<?=  htmlspecialchars($prezzo_max)  ?>" class="form-control" placeholder="Prezzo max euro.."></div>
-        <div><input type="date" value="<?=  htmlspecialchars($data)  ?>" class="form-control" name="data"></div>
-        
+        <div class="input-group mb-2">
+            <input type="text" id="nome_cliente" name="nome_cliente" value="<?= htmlspecialchars($nome_cliente) ?>" class="form-control" placeholder="Cliente..">
+            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('nome_cliente').value = ''"><i class="bi bi-x-lg"></i></button>
+        </div>
 
-        <button class="btn btn-primary">Cerca</button>
+        <div class="input-group mb-2">
+            <input type="text" id="paese" name="paese" value="<?= htmlspecialchars($paese) ?>" class="form-control" placeholder="Paese">
+            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('paese').value = ''"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div class="input-group mb-2">
+            <input type="text" id="citta" name="citta" value="<?= htmlspecialchars($citta) ?>" class="form-control" placeholder="Città..">
+            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('citta').value = ''"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div class="input-group mb-2">
+            <input type="number" id="prezzo_max" name="prezzo_max" value="<?= htmlspecialchars($prezzo_max) ?>" class="form-control" placeholder="Prezzo max euro..">
+            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('prezzo_max').value = ''"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div class="input-group mb-2">
+            <input type="number" id="posti" name="posti" value="<?= htmlspecialchars($posti) ?>" class="form-control" placeholder="Posti disponibili...">
+            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('posti').value = ''"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div class="input-group mb-2">
+            <input type="date" id="data" name="data" value="<?= htmlspecialchars($data) ?>" class="form-control">
+            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('data').value = ''"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <button class="btn btn-primary mb-2">Cerca</button>
+
+        <a href="ricerca.php" class="btn btn-secondary ms-2 mb-2">Annulla</a>
 
     </form>
 
 
+
+    <!--TABELLA RISULTATI-->
     <table class="table table-striped">
-        
+
         <thead>
             <tr>
                 <th>ID</th>
@@ -146,32 +224,24 @@
                 <th>Città</th>
                 <th>Prezzo</th>
                 <th>Data</th>
-           
             </tr>
         </thead>
 
         <tbody>
-        <?php while ($row = $result->fetch_assoc()) : ?>
-            <tr>
-                <td><?= $row['id'] ?></td>
-                <td><?= $row['nome'] ?></td>
-                <td><?= $row['paese'] ?></td>
-                <td><?= $row['citta'] ?></td>
-                <td><?= $row['prezzo'] ?></td>
-                <td><?= $row['data_prenotazione'] ?></td>
-         
-            </tr>
-
+            <?php while ($row = $result->fetch_assoc()) : ?>
+                <tr>
+                    <td><?= $row['id'] ?></td>
+                    <td><?= $row['nome'] . ' ' . $row['cognome'] ?></td>
+                    <td><?= $row['paese'] ?></td>
+                    <td><?= $row['citta'] ?></td>
+                    <td><?= $row['prezzo'] ?> €</td>
+                    <td><?= $row['data_prenotazione'] ?></td>
+                </tr>
             <?php endwhile; ?>
         </tbody>
+
     </table>
 
 
-    <!--Paginazione-->
-    
 
-
-
-<?php  include 'footer.php' ?>
-
-<?php  include 'footer.php' ?>
+<?php include 'footer.php'; ?>

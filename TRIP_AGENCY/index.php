@@ -3,10 +3,10 @@
 
 
     <div class="text-center py-4">
-
-        <h1 class="display-5">Benvenuti nella nostra Trip-Agency</h1>
-        <p class="lead">Esplora le nostre destinazioni, gestisci i clienti e monitora le prenotazioni</p>
-
+        <div class="welcome-glass">
+            <h1 class="display-5 welcome-title">Benvenuti nella nostra Happy Skies Travel</h1>
+            <p class="lead" style="font-weight: 500;">Esplora le nostre destinazioni, gestisci i clienti e monitora le prenotazioni</p>
+        </div>
     </div>
 
 
